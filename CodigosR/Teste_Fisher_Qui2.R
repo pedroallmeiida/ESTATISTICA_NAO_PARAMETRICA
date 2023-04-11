@@ -96,6 +96,38 @@ teste.fisher = fisher.test(M1, alternative = "less")
 rstatix::fisher_test(xtab = M1, alternative = "less")
 
 
+### Exemplo do tipo de preparacao
 
+Input =("
+preparacao  infeccao  Nao_infeccao
+iodo_aquoso      14      94
+iodo_insoluvel       4      97
+")
+
+M1 = as.matrix(read.table(textConnection(Input),header=TRUE, row.names=1))
+M1
+
+qui2 <- chisq.test(M1, correct = F)
+qui2
+
+qui2$expected
+
+
+### Teste Exato de Fisher ----
+
+
+Input =("
+Frequencia  Sim  Nao
+Naive      2      7
+experiente       8     4  
+")
+
+M1 = as.matrix(read.table(textConnection(Input),header=TRUE, row.names=1))
+M1
+
+
+teste.fisher = fisher.test(M1, alternative = "less") 
+
+rstatix::fisher_test(xtab = M1, alternative = "less")
 
 
