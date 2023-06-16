@@ -1,0 +1,354 @@
+---
+title: "Análise Exploratória"
+author: "Pedro Almeida"
+format: html
+editor: visual
+---
+
+## Análise exploratória dos dados
+
+Esse material tem como objetivo, introduzir algumas análises iniciais que precisamos fazer quando estamos com os nossos dados 'em mãos'.
+
+## Banco de dados
+
+Estudo de coorte prospectivo foi realizado em pacientes mexicanos recém-diagnosticados com CIS que se apresentaram no Instituto Nacional de Neurologia e Neurocirurgia (NINN) na Cidade do México, México, entre 2006 e 2010.
+
+**Citation**:\
+Pineda, Benjamin; Flores Rivera, Jose De Jesus (2023), "Conversion predictors of Clinically Isolated Syndrome to Multiple Sclerosis in Mexican patients: a prospective study.", Mendeley Data, V1, doi: 10.17632/8wk5hjx7x2.1
+
+**License**:\
+CC BY 4.0
+
+**Dataset column descriptions**
+
+1.  ID: Patient identifier (int)
+
+2.  Age: Age of the patient (in years)
+
+3.  Schooling: time the patient spent in school (in years)
+
+4.  Gender: 1=male, 2=female
+
+5.  Breastfeeding: 1=yes, 2=no, 3=unknown
+
+6.  Varicella: 1=positive, 2=negative, 3=unknown
+
+7.  Initial_Symptoms: 1=visual, 2=sensory, 3=motor, 4=other, 5= visual and sensory, 6=visual and motor, 7=visual and others, 8=sensory and motor, 9=sensory and other, 10=motor and other, 11=Visual, sensory and motor, 12=visual, sensory and other, 13=Visual, motor and other, 14=Sensory, motor and other, 15=visual,sensory,motor and other
+
+8.  Mono \_or_Polysymptomatic: 1=monosymptomatic, 2=polysymptomatic, 3=unknown
+
+9.  Oligoclonal_Bands: 0=negative, 1=positive, 2=unknown
+
+10. LLSSEP: 0=negative, 1=positive
+
+11. ULSSEP:0=negative, 1=positive
+
+12. VEP:0=negative, 1=positive
+
+13. BAEP: 0=negative, 1=positive
+
+14. Periventricular_MRI:0=negative, 1=positive
+
+15. Cortical_MRI: 0=negative, 1=positive
+
+16. Infratentorial_MRI:0=negative, 1=positive
+
+17. Spinal_Cord_MRI: 0=negative, 1=positive
+
+18. initial_EDSS:?
+
+19. final_EDSS:?
+
+20. Group: 1=CDMS, 2=non-CDMS
+
+## Carregando nosso dataset
+
+```{r, warning=F, message=F}
+
+### Carregando as bibliotecas 
+
+library(readr) # leitura de dados em csv
+library(dplyr) # manipulacao de dados
+library(magrittr) # manipulacao de dados
+library(ggplot2) # visualizacao dos dados 
+library(plotly) # visualizacao dos dados
+library(skimr)
+
+
+```
+
+```{r, warning=F, message=F}
+
+## Carregando os dados
+df = read.csv( file = 'C:\\Users\\pedro\\Documents\\github\\ESTATISTICA_NAO_PARAMETRICA\\CodigosR\\conversion_predictors_of_clinically_isolated_syndrome_to_multiple_sclerosis.csv'  )
+
+## Visualizando os tipos das variaveis
+glimpse(df)
+
+```
+
+## Primeira análise do dataset
+
+### Verificação de missing e formato das variáveis
+
+```{r, warning=F, message=F}
+
+
+df %>% 
+  skim() %>% 
+  reactable::reactable()
+
+```
+
+Podemos ver que apesar de todas as variáveis estarem como numéricas, algumas delas não são numéricas de fato. Como por exemplo, *Gender* igual a 1 significa que o paciente é homem, se for igual a 2, a paciente é mulher. Dessa forma, é importante analisar variável por variável e saber o que cada código significa.
+
+## Alterando os Tipos das variáveis
+
+```{r}
+df = df %>% mutate(Gender = as.factor(Gender) ) 
+df = df %>% mutate(Breastfeeding = as.factor(Breastfeeding) ) 
+df = df %>% mutate(Varicella = as.factor(Varicella) ) 
+df = df %>% mutate(Initial_Symptom = as.factor(Initial_Symptom))
+df = df %>% mutate(group = as.factor(group)) 
+
+
+```
+
+## Análise Univariada
+
+### Gênero
+
+```{r, warning = F, message=F, fig.width =11, fig.height = 5}
+
+library(tidyr)
+library(ggplot2)
+library(reshape2)
+library(scales)
+library(tidyverse)
+
+df_fig = df %>% mutate(Gender = case_when(
+  Gender == 1 ~ 'Masculino',
+  Gender == 2  ~ 'Feminino' )
+  ) %>%  
+  group_by(Gender) %>%
+  summarize(freq = n()) %>%
+  mutate(pct = round(freq/sum(freq), 4 ) ) %>% # criando variavel da porcentagem chamada pct
+  mutate(categoria = Gender) # criando a variavel categoria para deixar generico no grafico
+
+
+fig1 =  ggplot(df_fig, aes(fct_reorder(categoria, freq, .desc = F), pct, fill = categoria)) + 
+  geom_bar(stat='identity') + 
+  geom_text(aes(label= scales::percent(pct) ), position = position_stack(vjust = 1), hjust = c(1),size = 10, color = 'white')+
+#  geom_text(aes(label= scales::percent(pct) ), vjust = 'bottom', hjust = 'bottom', size = 5)+
+  #scale_y_continuous(labels = scales::percent())+
+  coord_flip() +
+  theme_linedraw()+
+  labs(x="", y="", alpha = "", fill = "", colour = "") +
+  theme(legend.position = "none") +         # Remove all legends from plot
+  scale_fill_manual( values = c("darkred", "darkgray" ) )+
+  scale_y_continuous(labels=scales::percent_format() )+
+  theme(axis.text=element_text(size=25,face="bold"),axis.title=element_text(size=25,face="bold"), 
+        legend.text=element_blank(),
+        legend.title=element_blank() )+
+  theme(axis.text.x=element_blank(),
+        axis.ticks=element_blank(),panel.border=element_blank(),panel.grid.major=element_blank(),
+        panel.grid.minor=element_blank());
+
+
+fig2 =  ggplot(df_fig, aes(fct_reorder(categoria, freq, .desc = F), pct, fill = categoria)) + 
+  geom_bar(stat='identity') + 
+  geom_text(aes(label= scales::percent(pct) ), position = position_stack(vjust = 0.9), hjust = c(0.5),size = 10, color = 'white')+
+#  geom_text(aes(label= scales::percent(pct) ), vjust = 'bottom', hjust = 'bottom', size = 5)+
+  #scale_y_continuous(labels = scales::percent())+
+  #coord_flip() +
+  theme_linedraw()+
+  labs(x="", y="", alpha = "", fill = "", colour = "") +
+  theme(legend.position = "none") +         # Remove all legends from plot
+  scale_fill_manual( values = c("darkred", "darkgray" ) )+
+  scale_y_continuous(labels=scales::percent_format() )+
+  theme(axis.text=element_text(size=25,face="bold"),axis.title=element_text(size=25,face="bold"), 
+        legend.text=element_blank(),
+        legend.title=element_blank() )+
+  theme(axis.text.y=element_blank(),
+        axis.ticks=element_blank(),panel.border=element_blank(),panel.grid.major=element_blank(),
+        panel.grid.minor=element_blank());
+fig1
+
+fig2
+
+
+```
+
+## Análise bivariada
+
+## Tabelas
+
+```{r, warning = F}
+
+df  %>%
+  gtsummary::tbl_cross(row = group, col = Gender, percent = "cell")
+
+
+
+
+```
+
+## Gráficos
+
+### Age
+
+```{r, warning = F}
+
+df = df %>% mutate(group = case_when(
+  group == 1 ~ 'Tem a doença',
+  group == 2  ~ 'Não tem a doença' ))
+
+ggplot(df, aes(x = group, y = Age, colour = group) ) + 
+    ggtitle('') +
+    theme_minimal()+
+    labs(x="", y="", alpha = "", fill = "", colour = "") +          theme(legend.position = "bottom") +
+    geom_boxplot(size = 1) + 
+    theme(axis.text=element_text(size=20, face = 'bold'),
+          axis.title=element_text(size=20,face="bold"),
+          plot.title = element_text(size = 20, face = "bold"),
+          legend.title=element_text(size=20, face = 'bold'), 
+          axis.text.x=element_blank(),
+          legend.text=element_text(size=15, face = 'bold') )
+
+```
+
+## Anos de escolaridade
+
+```{r, warning = F}
+
+
+ggplot(df, aes(x = group, y = Schooling, colour = group) ) + 
+    ggtitle('') +
+    theme_minimal()+
+    labs(x="", y="", alpha = "", fill = "", colour = "") +          theme(legend.position = "bottom") +
+    geom_boxplot(size = 1) + 
+    theme(axis.text=element_text(size=20, face = 'bold'),
+          axis.title=element_text(size=20,face="bold"),
+          plot.title = element_text(size = 20, face = "bold"),
+          legend.title=element_text(size=20, face = 'bold'), 
+          axis.text.x=element_blank(),
+          legend.text=element_text(size=15, face = 'bold') )
+```
+
+## Variáveis qualitativas
+
+### Alvo x Genero
+
+```{r, warning=F, message=F}
+### ALVO x GENERO ----
+
+df_fig = df %>% mutate(Gender = case_when(
+  Gender == 1 ~ 'Masculino',
+  Gender == 2  ~ 'Feminino' )
+  ) %>%  
+  group_by(Gender, group) %>%
+  summarize(freq = n()) %>%
+  mutate(pct = round(freq/sum(freq), 4 ) ) %>% # criando variavel da porcentagem chamada pct
+  mutate(categoria = Gender) # criando a variavel categoria para deixar generico no grafico
+
+ggplot( df_fig, aes(categoria, pct, fill = group) ) + 
+  geom_bar(stat='identity') + 
+  geom_text(aes(label= scales::percent(pct) ), position = position_stack(vjust = 1), hjust = c(-0.1), size = 5, col = 'white')+
+  #scale_y_continuous(labels = scales::percent())+
+  coord_flip() +
+  theme_linedraw()+
+  labs(x="", y="", alpha = "", fill = "Alvo", colour = "") +
+  scale_fill_manual( values = c( "darkred", "darkblue" ) ) +
+  #theme(legend.position = "none") +         # Remove all legends from plot
+  theme(axis.text=element_text(size=15,face="bold"),axis.title=element_text(size=15,face="bold")
+        #,legend.text=element_blank(), legend.title=element_blank() 
+        )+
+  theme(axis.text.x=element_blank(),
+        axis.ticks=element_blank(),panel.border=element_blank(),panel.grid.major=element_blank(),
+        panel.grid.minor=element_blank())
+```
+
+### Alvo x Mono_or_Polysymptomatic
+
+```{r, warning=F, message=F}
+ ### ALVO x mono_or_poly....----
+
+df_fig = df %>% filter(Mono_or_Polysymptomatic != 3) %>% mutate(Mono_or_Polysymptomatic = case_when(
+  Mono_or_Polysymptomatic == 1 ~ 'monosymptomatic',
+  Mono_or_Polysymptomatic == 2  ~ 'polysymptomatic')
+  ) %>%
+  group_by( Mono_or_Polysymptomatic, group) %>%
+  summarize(freq = n()) %>%
+  mutate(pct = round(freq/sum(freq), 4 ) ) %>% # criando variavel da porcentagem chamada pct
+  mutate(categoria = Mono_or_Polysymptomatic) # criando a variavel categoria para deixar generico no grafico
+
+df_fig
+
+ggplot( df_fig, aes(categoria, pct, fill = group) ) +
+  geom_bar(stat='identity') +
+  geom_text(aes(label= scales::percent(pct) ), position = position_stack(vjust = 1), hjust = c(-0.1), size = 5, col = 'white')+
+  #scale_y_continuous(labels = scales::percent())+
+  coord_flip() +
+  theme_linedraw()+
+  labs(x="", y="", alpha = "", fill = "Alvo", colour = "") +
+  scale_fill_manual( values = c( "darkred", "darkblue" ) ) +
+  #theme(legend.position = "none") +         # Remove all legends from plot
+  theme(axis.text=element_text(size=15,face="bold"),axis.title=element_text(size=15,face="bold")
+        #,legend.text=element_blank(), legend.title=element_blank()
+        )+
+  theme(axis.text.x=element_blank(),
+        axis.ticks=element_blank(),panel.border=element_blank(),panel.grid.major=element_blank(),
+        panel.grid.minor=element_blank())
+```
+
+# Testes de hipóteses
+
+### Mann Whitney ou teste t
+
+#### Testar as suposições para o teste paramétrico (teste t)
+
+As suposições do teste t são: Normalidade nos dados e variância constante entre os grupos.
+
+```{r}
+
+
+# Teste Wilcoxon-Mann-Whitney
+shapiro.test(df$Age[df$group == 'Tem a doença'] ) #  não normal
+shapiro.test(df$Age[df$group == 'Não tem a doença'] ) # não normal
+var.test(df$Age[df$group == 'Tem a doença'],df$Age[df$group == 'Não tem a doença']) # Variancias homogenias 
+
+
+```
+
+Para ambos os grupos a idade não tem distribuição normal. Sendo assim, como a suposição de normalidade não é válida, então temos que usar um teste não paramétrico. Como temos duas populações, vamos usar o teste de Mann-Whitney.
+
+```{r}
+
+wilcox.test(df$Age~df$group) # as medianas nao sao diferentes
+
+
+
+```
+
+#### Teste Qui-Quadrado
+
+O teste Qui-quadrado pode ser usado para medir associação entre duas variáveis qualitativas.
+
+```{r}
+
+chisq.test(df$Gender, df$group, correct = T)
+
+
+```
+
+Dessa forma, como o p-valor é menor que o nível de significância ($\alpha = 0.05$), então rejeitamos a hipóteses de que as frequências são iguais para as duas populações.
+
+#### Mono ou Polysymptomatic
+
+```{r}
+df = df %>% filter(Mono_or_Polysymptomatic != 3)
+qui2 = chisq.test(df$Mono_or_Polysymptomatic, df$group, correct = T)
+
+qui2$expected
+
+```
